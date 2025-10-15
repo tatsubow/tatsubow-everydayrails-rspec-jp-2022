@@ -34,4 +34,35 @@ RSpec.describe ProjectsController, type: :controller do
             end
         end
     end
+
+    describe "#show" do
+        #認証ユーザー
+        context "as an authorized user" do
+            before do
+                @user = FactoryBot.create(:user)
+                @project = FactoryBot.create(:project, owner: @user)
+            end
+
+            it "responds successfully" do
+                sign_in @user
+                get :show, params: { id: @project.id }
+                expect(response).to be_successful
+            end
+        end
+
+        #未認証ユーザー
+        context "as a unauthorized user" do
+            before do
+                @user = FactoryBot.create(:user)
+                other_user = FactoryBot.create(:user)
+                @project = FactoryBot.create(:project, owner: other_user)
+            end
+
+            it "redirects to the dashboard" do
+                sign_in @user
+                get :show, params: { id: @project.id }
+                expect(response).to redirect_to root_path
+            end
+        end
+    end
 end

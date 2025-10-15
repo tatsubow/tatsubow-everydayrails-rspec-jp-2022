@@ -158,4 +158,66 @@ RSpec.describe ProjectsController, type: :controller do
             end
         end
     end
+    
+    describe "#destroy" do
+        #認証ユーザー
+        context "as an authorized user" do
+            before do
+                @user = FactoryBot.create(:user)
+                @project = FactoryBot.create(:project, owner: @user)
+            end
+
+            it "deletes a project" do
+                sign_in @user
+                expect {
+                    delete :destroy, params: { id: @project.id }
+                }.to change(@user.projects, :count).by(-1)
+            end
+        end
+
+        #未認証ユーザー
+        context "as a unauthorized user" do
+            before do
+                @user = FactoryBot.create(:user)
+                other_user = FactoryBot.create(:user)
+                @project = FactoryBot.create(:project, owner: other_user)
+            end
+
+            it "does not delete the project" do
+                sign_in @user
+                expect {
+                    delete :destroy, params: { id: @project.id }
+                }.to_not change(Project, :count)
+            end
+
+            it "redirects to the dashboard" do
+                sign_in @user
+                delete :destroy, params: { id: @project.id }
+                expect(response).to redirect_to root_path
+            end
+        end
+
+        #ゲスト
+        context "as a guest" do
+            before do
+                @project = FactoryBot.create(:project)
+            end
+
+            it "returns a 302 response" do
+                delete :destroy, params: { id: @project.id }
+                expect(response).to have_http_status "302"
+            end
+
+            it "redirects to the sign-in page" do
+                delete :destroy, params: { id: @project.id }
+                expect(response).to redirect_to "/users/sign_in"
+            end
+
+            it "does not delete the project" do
+                expect {
+                    delete :destroy, params: { id: @project.id }
+                }.to_not change(Project, :count)
+            end
+        end
+    end
 end

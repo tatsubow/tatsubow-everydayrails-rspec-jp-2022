@@ -97,4 +97,65 @@ RSpec.describe ProjectsController, type: :controller do
             end
         end
     end
+
+    describe "#update" do
+        #認証ユーザー
+        context "as an authorized user" do
+            before do
+                @user = FactoryBot.create(:user)
+                @project = FactoryBot.create(:project, owner: @user)
+            end
+
+            it "updates a project" do
+                project_params = FactoryBot.attributes_for(:project, name: "New Project Name")
+                sign_in @user
+                put :update, params: { id: @project.id, project: project_params }
+                expect(@project.reload.name).to eq "New Project Name"
+            end
+        end
+
+        #未認証ユーザー
+        context "as a unauthorized user" do
+            before do
+                @user = FactoryBot.create(:user)
+                other_user = FactoryBot.create(:user)
+                @project = FactoryBot.create(:project,
+                 owner: other_user,
+                 name: "Same Old Name")
+            end
+
+            it "does not update the project" do
+                project_params = FactoryBot.attributes_for(:project, name: "New Name")
+                sign_in @user
+                put :update, params: { id: @project.id, project: project_params }
+                expect(@project.reload.name).to eq "Same Old Name"
+            end
+
+            it "redirects to the dashboard" do
+                project_params = FactoryBot.attributes_for(:project)
+                sign_in @user
+                put :update, params: { id: @project.id, project: project_params }
+                expect(response).to redirect_to root_path
+            end
+        end
+
+        #ゲスト
+        context "as a guest" do
+            before do
+                @project = FactoryBot.create(:project)
+            end
+
+            it "returns a 302 response" do
+                project_params = FactoryBot.attributes_for(:project)
+                put :update, params: { id: @project.id, project: project_params }
+                expect(response).to have_http_status "302"
+            end
+
+            it "redirects to the sign-in page" do
+                project_params = FactoryBot.attributes_for(:project)
+                put :update, params: { id: @project.id, project: project_params }
+                expect(response).to redirect_to "/users/sign_in"
+            end
+        end
+    end
 end

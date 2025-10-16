@@ -12,7 +12,17 @@ RSpec.describe "Projects", type: :request do
         sign_in @user
         expect {
           post projects_path, params: { project: project_params }
-        }.to change(@user.project, :count).by(1)
+        }.to change(@user.projects, :count).by(1)
+      end
+    end
+
+    context "with invalid attributes" do
+      it "does not add a project" do
+        project_params = FactoryBot.attributes_for(:project, name: nil)
+        sign_in @user
+        expect {
+          post projects_path, params: { project: project_params }
+        }.to_not change(@user.projects, :count)
       end
     end
   end
